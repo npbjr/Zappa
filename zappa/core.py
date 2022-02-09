@@ -1105,7 +1105,7 @@ class Zappa(object):
 
         if self.tags:
             self.lambda_client.tag_resource(Resource=resource_arn, Tags=self.tags)
-
+        self.wait_until_lambda_function_is_active(function_name)
         return resource_arn
 
     def update_lambda_function(self, bucket, function_name, s3_key=None, publish=True, local_zip=None, num_revisions=None):
@@ -1168,7 +1168,7 @@ class Zappa(object):
             # Delete older revisions if their number exceeds the specified limit
             for version in versions_in_lambda[::-1][num_revisions:]:
                 self.lambda_client.delete_function(FunctionName=function_name,Qualifier=version)
-
+        self.wait_until_lambda_function_is_updated(function_name)
         return resource_arn
 
     def update_lambda_configuration(    self,
@@ -1198,6 +1198,7 @@ class Zappa(object):
         if not aws_environment_variables:
             aws_environment_variables = {}
 
+        self.wait_until_lambda_function_is_updated(function_name)
         # Check if there are any remote aws lambda env vars so they don't get trashed.
         # https://github.com/Miserlou/Zappa/issues/987,  Related: https://github.com/Miserlou/Zappa/issues/765
         lambda_aws_config = self.lambda_client.get_function_configuration(FunctionName=function_name)
@@ -1430,6 +1431,23 @@ class Zappa(object):
         response = self.elbv2_client.create_listener(**kwargs)
         print("ALB created with DNS: {}".format(load_balancer_dns))
         print("Note it may take several minutes for load balancer to become available.")
+
+    def wait_until_lambda_function_is_updated(self, function_name):
+        """
+        Wait until lambda LastUpdateStatus=Successful
+        """
+        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/lambda.html#waiters
+        waiter = self.lambda_client.get_waiter("function_updated")
+        print(f"Waiting for lambda function [{function_name}] to be updated...")
+        waiter.wait(FunctionName=function_name)
+    def wait_until_lambda_function_is_active(self, function_name):
+        """
+                Wait until lambda State=Active
+                """
+        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/lambda.html#waiters
+        waiter = self.lambda_client.get_waiter("function_active")
+        print(f"Waiting for lambda function [{function_name}] to become active...")
+        waiter.wait(FunctionName=function_name)
 
     def undeploy_lambda_alb(self, lambda_name):
         """
