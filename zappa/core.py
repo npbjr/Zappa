@@ -1438,7 +1438,7 @@ class Zappa(object):
         """
         # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/lambda.html#waiters
         waiter = self.lambda_client.get_waiter("function_updated")
-        print(f"Waiting for lambda function [{function_name}] to be updated...")
+        print("Waiting for lambda function [{}] to be updated...".format(function_name))
         waiter.wait(FunctionName=function_name)
     def wait_until_lambda_function_is_active(self, function_name):
         """
@@ -1446,7 +1446,7 @@ class Zappa(object):
                 """
         # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/lambda.html#waiters
         waiter = self.lambda_client.get_waiter("function_active")
-        print(f"Waiting for lambda function [{function_name}] to become active...")
+        print("Waiting for lambda function [{}] to become active...".format(function_name))
         waiter.wait(FunctionName=function_name)
 
     def undeploy_lambda_alb(self, lambda_name):
